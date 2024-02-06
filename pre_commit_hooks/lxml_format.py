@@ -128,8 +128,8 @@ def beautify(
 def str_to_bool(s) -> bool:
   """
   Converts a string to a boolean value. The string is case-insensitive and the
-  following strings will be considered as True: 'true', 'on', 'yes', '1'. Any
-  other string will be considered as False.
+  following strings will be considered as True: 'true', 'on', 'yes', '1', 't',
+  'y'. Any other string will be considered as False.
 
   Args:
     s (str): The string to be converted.
@@ -138,7 +138,7 @@ def str_to_bool(s) -> bool:
     bool: The boolean value corresponding to the string.
 
   """
-  pattern=re.compile("^\s*(true|on|yes|1)\s*$", re.IGNORECASE)
+  pattern=re.compile("^\s*(true|on|yes|1|t|y)\s*$", re.IGNORECASE)
   return bool(pattern.match(s))
 
 
