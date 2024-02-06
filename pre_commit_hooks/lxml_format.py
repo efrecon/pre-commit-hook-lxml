@@ -14,7 +14,7 @@ ENV_PREFIX = 'PRE_COMMIT_HOOK_LXML_FORMAT_'
 def pretty_print(content: bytes, space: str, indent: int) -> bytes:
   parser = etree.XMLParser(remove_blank_text=True)
   tree = etree.XML(content, parser=parser).getroottree()
-  etree.indent(tree, space=indent * space)
+  etree.indent(tree, space=space * indent)
   return etree.tostring(tree,
                         pretty_print=True,
                         encoding=tree.docinfo.encoding,
