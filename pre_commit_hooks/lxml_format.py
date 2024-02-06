@@ -3,10 +3,11 @@ from __future__ import annotations
 import argparse
 import sys
 import os
+import logging
+
 from typing import Sequence
 from lxml import etree
 from editorconfig import get_properties, EditorConfigError
-import logging
 
 INDENT = 2
 RETRIES = 5
