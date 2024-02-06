@@ -21,27 +21,34 @@ def pretty_print(content: bytes, space: str, width: int) -> None:
 
 
 def beautify(filename: str, width: int, retries: int) -> None:
-  # Acquire properties from .editorconfig
-  try:
-    properties = get_properties(os.path.abspath(filename))
-  except EditorConfigError:
-    logging.warning("Error getting EditorConfig properties", exc_info=True)
-
-  # Resolve indentation and its size from editor config or provided incoming
-  # arguments
   space = ' '
   style = 'space'
-  if 'indent_style' in properties:
-    style = properties['indent_style']
-    if style == 'tab':
-      width = 1
-      space = '\t'
-      logging.debug(f'Indentation set to tabs via editorconfig')
-  if style == 'space':
-    if 'indent_size' in properties:
-      width = int(properties['indent_size'])
-      space = ' '
-      logging.debug(f'Indentation set to {width} via editorconfig')
+
+  if width <= 0:
+    # Acquire properties from .editorconfig
+    try:
+      properties = get_properties(os.path.abspath(filename))
+
+      # Resolve indentation and its size from editor config
+      if 'indent_style' in properties:
+        style = properties['indent_style']
+        if style == 'tab':
+          width = 1
+          space = '\t'
+          logging.debug(f'Indentation set to tabs via editorconfig')
+      if style == 'space':
+        if 'indent_size' in properties:
+          width = int(properties['indent_size'])
+          space = ' '
+          logging.debug(f'Indentation set to {width} via editorconfig')
+      if width <= 0:
+        width = INDENT
+        logging.warning(f'No indentation information in editorconfig, defaulting to {width}')
+    except EditorConfigError:
+      width = INDENT
+      logging.warning(f"Error getting EditorConfig properties. Defaulting indentation to {width}.", exc_info=True)
+  else:
+    logging.debug(f'Indentation set to {width} via CLI')
 
   # Read file content, binary mode
   with open(filename, 'rb') as f:
@@ -71,8 +78,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     '-i', '--indent',
     dest='width',
     type=int,
-    default=INDENT,
-    help='Number of spaces to use for indentation when no .editorconfig found. Default: %(default)s)'
+    default=-1,
+    help='Number of spaces to use, overrides .editorconfig when positive. Default: %(default)s)'
   )
 
   parser.add_argument(
