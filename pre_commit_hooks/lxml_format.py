@@ -15,7 +15,9 @@ ENV_PREFIX = 'PRE_COMMIT_HOOK_LXML_FORMAT_'
 
 def pretty_print(content: bytes, space: str, indent: int) -> bytes:
   """
-  Pretty prints an XML content with specified indentation.
+  Pretty prints an XML content with specified indentation. Results are per the
+  lxml tostring method, with pretty_print=True. In general, this will add
+  line endings, fix indentation, cleanup tags and add an XML declaration.
 
   Args:
     content (bytes): The XML content to be pretty printed.
