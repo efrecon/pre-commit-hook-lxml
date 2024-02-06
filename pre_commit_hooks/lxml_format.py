@@ -20,34 +20,28 @@ def pretty_print(content: bytes, space: str, width: int) -> None:
                         xml_declaration=True)
 
 
+def get_indent_from_editorconfig(filename: str) -> tuple[int, str]:
+  try:
+    properties = get_properties(os.path.abspath(filename))
+    if 'indent_style' in properties:
+      style = properties['indent_style']
+      if style == 'tab':
+        return 1, '\t'
+      if 'indent_size' in properties and style == 'space':
+        return int(properties['indent_size']), ' '
+  except EditorConfigError:
+    logging.warning("Error getting EditorConfig properties.", exc_info=True)
+  return INDENT, ' '
+
+
 def beautify(filename: str, width: int, retries: int) -> None:
-  space = ' '
-  style = 'space'
-
-  if width <= 0:
-    # Acquire properties from .editorconfig
-    try:
-      properties = get_properties(os.path.abspath(filename))
-
-      # Resolve indentation and its size from editor config
-      if 'indent_style' in properties:
-        style = properties['indent_style']
-        if style == 'tab':
-          width = 1
-          space = '\t'
-          logging.debug(f'Indentation set to tabs via editorconfig')
-      if style == 'space':
-        if 'indent_size' in properties:
-          width = int(properties['indent_size'])
-          space = ' '
-          logging.debug(f'Indentation set to {width} via editorconfig')
-      if width <= 0:
-        width = INDENT
-        logging.warning(f'No indentation information in editorconfig, defaulting to {width}')
-    except EditorConfigError:
-      width = INDENT
-      logging.warning(f"Error getting EditorConfig properties. Defaulting indentation to {width}.", exc_info=True)
+  # Get the indentation width and style from the CLI or .editorconfig
+  if width < 0:
+    width, space = get_indent_from_editorconfig(filename)
+    logging.debug(f'Indentation set to {width} spaces via editorconfig or default.')
   else:
+    space = ' '
+    style = 'space'
     logging.debug(f'Indentation set to {width} via CLI')
 
   # Read file content, binary mode
