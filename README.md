@@ -1,7 +1,7 @@
 # lxml `pre-commit` hook
 
 This project implements a [pre-commit] [hook] to [gently](#example) reformat XML
-files. Reformatting adds newlines and indentation space, and cleans up tags
+files. Reformatting adds newlines and indentation spaces, and cleans up tags
 using the [tostring] function of the [lxml] project. By default, indentation
 details are picked from the [editorconfig] settings and mapped as best as
 possible to the capabilities of the [tostring] function, i.e. either a number of
