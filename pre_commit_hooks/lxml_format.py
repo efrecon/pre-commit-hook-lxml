@@ -151,7 +151,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
   Returns:
     An integer representing the exit code. 0 indicates success, while non-zero values indicate errors.
-    1 is used for general errors, while 2 and above are used to communicate the number of erroneous files.
+    1 is used for general errors, while 2 and above are used to communicate the number of erroneous files: the exit code minus 2.
   """
   argv = argv if argv is not None else sys.argv[1:]
   parser = argparse.ArgumentParser(prog='lxml_format', description='Prettyprint XML file with lxml')
