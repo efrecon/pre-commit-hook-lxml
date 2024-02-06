@@ -4,6 +4,7 @@ import argparse
 import sys
 import os
 import logging
+import re
 
 from typing import Sequence
 from lxml import etree
@@ -137,7 +138,8 @@ def str_to_bool(s) -> bool:
     bool: The boolean value corresponding to the string.
 
   """
-  return s.lower() in ['true', 'on', 'yes', '1']
+  pattern=re.compile("^\s*(true|on|yes|1)\s*$", re.IGNORECASE)
+  return bool(pattern.match(s))
 
 
 def main(argv: Sequence[str] | None = None) -> int:
