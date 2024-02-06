@@ -9,5 +9,3 @@
     - pre-merge-commit
     - pre-push
     - manual
-  args:
-    - --log-level=DEBUG
