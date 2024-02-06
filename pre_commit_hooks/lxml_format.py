@@ -86,7 +86,6 @@ def beautify(
     logging.debug(f'Indentation set to {indent} spaces via editorconfig or default.')
   else:
     space = ' '
-    style = 'space'
     logging.debug(f'Indentation set to {indent} via CLI')
 
   # Read file content, binary mode
