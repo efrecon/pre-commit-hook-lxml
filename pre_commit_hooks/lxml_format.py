@@ -126,7 +126,9 @@ def beautify(
 
 def str_to_bool(s) -> bool:
   """
-  Converts a string to a boolean value.
+  Converts a string to a boolean value. The string is case-insensitive and the
+  following strings will be considered as True: 'true', 'on', 'yes', '1'. Any
+  other string will be considered as False.
 
   Args:
     s (str): The string to be converted.
