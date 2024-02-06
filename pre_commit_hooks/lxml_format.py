@@ -49,8 +49,12 @@ def beautify(
     logging.debug(f'Indentation set to {width} via CLI')
 
   # Read file content, binary mode
-  with open(filename, 'rb') as f:
-    content = f.read()
+  try:
+    with open(filename, 'rb') as f:
+      content = f.read()
+  except Exception as e:
+    logging.error(f'Failed to read file: {filename}: {e}')
+    return False
 
   # Pretty print the content
   original = content
@@ -68,8 +72,12 @@ def beautify(
     # is, otherwise return a negative result (error).
     if write:
       logging.info(f'Formatted: {filename}')
-      with open(filename, "wb") as f:
-        f.write(xml)
+      try:
+        with open(filename, "wb") as f:
+          f.write(xml)
+      except Exception as e:
+        logging.error(f'Failed to write file: {filename}: {e}')
+        return False
     else:
       logging.info(f'{filename} not properly formatted. Use --write to write changes.')
       return False
