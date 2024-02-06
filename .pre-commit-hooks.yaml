@@ -9,3 +9,5 @@
     - pre-merge-commit
     - pre-push
     - manual
+  args:
+    - --write

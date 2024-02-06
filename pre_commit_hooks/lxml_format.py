@@ -34,7 +34,11 @@ def get_indent_from_editorconfig(filename: str) -> tuple[int, str]:
   return INDENT, ' '
 
 
-def beautify(filename: str, width: int, retries: int) -> None:
+def beautify(
+            filename: str,
+            width: int = INDENT,
+            retries: int = RETRIES,
+            write: bool = False) -> bool:
   # Get the indentation width and style from the CLI or .editorconfig
   if width < 0:
     width, space = get_indent_from_editorconfig(filename)
@@ -56,13 +60,20 @@ def beautify(filename: str, width: int, retries: int) -> None:
       break
     original = xml
 
-  # Write the content back to the file if it has changed
+  # Log/return the result and write the file if the write flag is set.
   if xml == content:
     logging.debug(f'No change: {filename}')
   else:
-    logging.info(f'Formatted: {filename}')
-    with open(filename, "wb") as f:
-      f.write(xml)
+    # Write the content back to the file if it has changed and the write flag
+    # is, otherwise return a negative result (error).
+    if write:
+      logging.info(f'Formatted: {filename}')
+      with open(filename, "wb") as f:
+        f.write(xml)
+    else:
+      logging.info(f'{filename} not properly formatted. Use --write to write changes.')
+      return False
+  return True
 
 def main(argv: Sequence[str] | None = None) -> int:
   argv = argv if argv is not None else sys.argv[1:]
@@ -92,6 +103,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     help='Debug level.'
   )
 
+  parser.add_argument(
+    '-w', '--write',
+    action='store_true',
+    dest='write',
+    help='Write the changes back to the file'
+  )
 
   parser.add_argument(
     'filenames',
@@ -110,8 +127,19 @@ def main(argv: Sequence[str] | None = None) -> int:
                       datefmt='%Y%m%d %H%M%S')
 
   try:
+    errors: int = 0
+    # Reformat/check formatting of the files. Count the ones not properly
+    # formatted.
     for filename in args.filenames:
-      beautify(filename, args.width, args.retries)
+      if not beautify(filename, args.width, args.retries, args.write):
+        errors += 1
+    # Return the number of files not properly formatted + 2. This will be
+    # reported to the OS as an error and enables better reporting, as long as
+    # there are less than 123 files with errors. See reserved exit codes here:
+    # https://tldp.org/LDP/abs/html/exitcodes.html
+    if errors > 0:
+      logging.error(f'Failed to format {errors} files')
+      return errors+2
     return 0
   except Exception as e:
     logging.error(e)
