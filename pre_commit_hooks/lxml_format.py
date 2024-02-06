@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import sys
 import os
+from typing import Sequence
 from lxml import etree
 from editorconfig import get_properties, EditorConfigError
 import logging
@@ -12,16 +13,37 @@ RETRIES = 5
 ENV_PREFIX = 'PRE_COMMIT_HOOK_LXML_FORMAT_'
 
 def pretty_print(content: bytes, space: str, indent: int) -> bytes:
+  """
+  Pretty prints an XML content with specified indentation.
+
+  Args:
+    content (bytes): The XML content to be pretty printed.
+    space (str): The string used for indentation.
+    indent (int): The number of spaces for each indentation level.
+
+  Returns:
+    bytes: The pretty printed XML content.
+  """
   parser = etree.XMLParser(remove_blank_text=True)
   tree = etree.XML(content, parser=parser).getroottree()
   etree.indent(tree, space=space * indent)
   return etree.tostring(tree,
-                        pretty_print=True,
-                        encoding=tree.docinfo.encoding,
-                        xml_declaration=True)
+              pretty_print=True,
+              encoding=tree.docinfo.encoding,
+              xml_declaration=True)
 
 
 def get_indent_from_editorconfig(filename: str) -> tuple[int, str]:
+  """
+  Get the indent style and size from the EditorConfig properties of a file.
+
+  Args:
+    filename (str): The path of the file.
+
+  Returns:
+    tuple[int, str]: A tuple containing the indent size and style.
+      The first element is the indent size, and the second element is the indent style.
+  """
   try:
     properties = get_properties(os.path.abspath(filename))
     if 'indent_style' in properties:
@@ -36,10 +58,23 @@ def get_indent_from_editorconfig(filename: str) -> tuple[int, str]:
 
 
 def beautify(
-            filename: str,
-            indent: int = INDENT,
-            retries: int = RETRIES,
-            write: bool = False) -> bool:
+      filename: str,
+      indent: int = INDENT,
+      retries: int = RETRIES,
+      write: bool = False) -> bool:
+  """
+  Beautifies, e.g. gently reformat the XML content of a file. Changes can be
+  written back to the file.
+
+  Args:
+    filename (str): The path of the file to be beautified.
+    indent (int, optional): The number of spaces to use for indentation. Defaults to INDENT.
+    retries (int, optional): The number of retries to attempt for pretty printing. Defaults to RETRIES.
+    write (bool, optional): Flag indicating whether to write the changes to the file. Defaults to False.
+
+  Returns:
+    bool: True if the file was beautified successfully, False otherwise.
+  """
   # Get the indentation indent and style from the CLI or .editorconfig
   if indent < 0:
     indent, space = get_indent_from_editorconfig(filename)
@@ -86,10 +121,32 @@ def beautify(
 
 
 def str_to_bool(s) -> bool:
+  """
+  Converts a string to a boolean value.
+
+  Args:
+    s (str): The string to be converted.
+
+  Returns:
+    bool: The boolean value corresponding to the string.
+
+  """
   return s.lower() in ['true', 'on', 'yes', '1']
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+  """
+  Main function for the lxml_format script. Parses the command-line arguments,
+  takes into account the environment variables, and calls the beautify function
+  on each file to reformat or report upon bad formatting.
+
+  Args:
+    argv: A sequence of command-line arguments. If None, sys.argv[1:] will be used.
+
+  Returns:
+    An integer representing the exit code. 0 indicates success, while non-zero values indicate errors.
+    1 is used for general errors, while 2 and above are used to communicate the number of erroneous files.
+  """
   argv = argv if argv is not None else sys.argv[1:]
   parser = argparse.ArgumentParser(prog='lxml_format', description='Prettyprint XML file with lxml')
 
