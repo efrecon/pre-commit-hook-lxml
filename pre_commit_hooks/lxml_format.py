@@ -57,6 +57,8 @@ def get_indent_from_editorconfig(filename: str) -> tuple[int, str]:
         return int(properties['indent_size']), ' '
   except EditorConfigError:
     logging.warning("Error getting EditorConfig properties.", exc_info=True)
+  except ValueError:
+    logging.warning("Error parsing indent_size in editorconfig.", exc_info=True)
   return INDENT, ' '
 
 
