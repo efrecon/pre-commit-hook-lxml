@@ -9,11 +9,12 @@ import logging
 
 INDENT = 2
 RETRIES = 5
+ENV_PREFIX = 'PRE_COMMIT_HOOK_LXML_FORMAT_'
 
-def pretty_print(content: bytes, space: str, width: int) -> None:
+def pretty_print(content: bytes, space: str, indent: int) -> None:
   parser = etree.XMLParser(remove_blank_text=True)
   tree = etree.XML(content, parser=parser).getroottree()
-  etree.indent(tree, space=width * space)
+  etree.indent(tree, space=indent * space)
   return etree.tostring(tree,
                         pretty_print=True,
                         encoding=tree.docinfo.encoding,
@@ -36,17 +37,17 @@ def get_indent_from_editorconfig(filename: str) -> tuple[int, str]:
 
 def beautify(
             filename: str,
-            width: int = INDENT,
+            indent: int = INDENT,
             retries: int = RETRIES,
             write: bool = False) -> bool:
-  # Get the indentation width and style from the CLI or .editorconfig
-  if width < 0:
-    width, space = get_indent_from_editorconfig(filename)
-    logging.debug(f'Indentation set to {width} spaces via editorconfig or default.')
+  # Get the indentation indent and style from the CLI or .editorconfig
+  if indent < 0:
+    indent, space = get_indent_from_editorconfig(filename)
+    logging.debug(f'Indentation set to {indent} spaces via editorconfig or default.')
   else:
     space = ' '
     style = 'space'
-    logging.debug(f'Indentation set to {width} via CLI')
+    logging.debug(f'Indentation set to {indent} via CLI')
 
   # Read file content, binary mode
   try:
@@ -59,7 +60,7 @@ def beautify(
   # Pretty print the content
   original = content
   for _ in range(retries):
-    xml = pretty_print(original, space=space, width=width)
+    xml = pretty_print(original, space=space, indent=indent)
     if xml == original:
       break
     original = xml
@@ -83,13 +84,18 @@ def beautify(
       return False
   return True
 
+
+def str_to_bool(s) -> bool:
+  return s.lower() in ['true', 'on', 'yes', '1']
+
+
 def main(argv: Sequence[str] | None = None) -> int:
   argv = argv if argv is not None else sys.argv[1:]
   parser = argparse.ArgumentParser(prog='lxml_format', description='Prettyprint XML file with lxml')
 
   parser.add_argument(
     '-i', '--indent',
-    dest='width',
+    dest='indent',
     type=int,
     default=-1,
     help='Number of spaces to use, overrides .editorconfig when positive. Default: %(default)s)'
@@ -126,10 +132,18 @@ def main(argv: Sequence[str] | None = None) -> int:
 
   args = parser.parse_args(argv)
 
+  # Existing environment variables, if set, will have precedence. This allows to
+  # bypass repository-wide settings (in pre-commit configuration YAML file) with
+  # local environment settings.
+  indent: int = int(os.environ.get(f'{ENV_PREFIX}INDENT', args.indent))
+  retries: int = int(os.environ.get(f'{ENV_PREFIX}RETRIES', args.retries))
+  loglevel= os.environ.get(f'{ENV_PREFIX}LOGLEVEL', args.loglevel)
+  write: bool = str_to_bool(os.environ.get(f'{ENV_PREFIX}WRITE', str(args.write)))
+
   # Setup logging
-  numeric_level = getattr(logging, args.loglevel.upper(), None)
+  numeric_level = getattr(logging, loglevel.upper(), None)
   if not isinstance(numeric_level, int):
-    raise ValueError('Invalid log level: %s' % args.loglevel)
+    raise ValueError('Invalid log level: %s' % loglevel)
   logging.basicConfig(level=numeric_level,
                       format='[lxml_format] [%(asctime)s.%(msecs)03d] [%(levelname)s] %(message)s',
                       datefmt='%Y%m%d %H%M%S')
@@ -139,7 +153,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     # Reformat/check formatting of the files. Count the ones not properly
     # formatted.
     for filename in args.filenames:
-      if not beautify(filename, args.width, args.retries, args.write):
+      if not beautify(filename, indent, retries, write):
         errors += 1
     # Return the number of files not properly formatted + 2. This will be
     # reported to the OS as an error and enables better reporting, as long as
