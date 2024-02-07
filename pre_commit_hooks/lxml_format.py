@@ -119,12 +119,11 @@ def beautify(
     logging.debug(f'Mac (classic) line endings enforced: {filename}')
     xml = xml.replace(b'\n', b'\r')
   elif endings == 'auto':
-    # windows
+    # windows or ancient mac somewhere?
     if b'\r\n' in original:
       logging.info(f'Windows line endings detected: {filename}')
       xml = xml.replace(b'\n', b'\r\n')
-    # ancient mac
-    if b'\r' in original and not b'\r\n' in original:
+    elif b'\r' in original and not b'\r\n' in original:
       logging.info(f'Mac (classic) line endings detected: {filename}')
       xml = xml.replace(b'\n', b'\r')
 
