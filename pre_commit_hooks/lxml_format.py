@@ -70,7 +70,8 @@ def beautify(
       filename: str,
       indent: int = INDENT,
       retries: int = RETRIES,
-      write: bool = False) -> bool:
+      write: bool = False,
+      endings: str = 'auto') -> bool:
   """
   Beautifies, e.g. gently reformat the XML content of a file. Changes can be
   written back to the file.
@@ -92,21 +93,40 @@ def beautify(
     space = ' '
     logging.debug(f'Indentation set to {indent} via CLI')
 
-  # Read file content, binary mode
+  # Read file content, binary mode into original variable
   try:
     with open(filename, 'rb') as f:
-      content = f.read()
+      original = f.read()
   except Exception as e:
     logging.error(f'Failed to read file: {filename}: {e}')
     return False
 
-  # Pretty print the content
-  original = content
+  # Pretty print the content until it has not changed between two iterations.
+  content = original
   for _ in range(retries):
     xml = pretty_print(original, space=space, indent=indent)
-    if xml == original:
+    if xml == content:
       break
-    original = xml
+    content = xml
+
+  # Convert line endings, if relevant. Detect from original content if
+  # necessary. Note: the output of pretty_print is always using unix line
+  # endings.
+  if endings == 'windows':
+    logging.debug(f'Windows line endings enforced: {filename}')
+    xml = xml.replace(b'\n', b'\r\n')
+  elif endings == 'mac':
+    logging.debug(f'Mac (classic) line endings enforced: {filename}')
+    xml = xml.replace(b'\n', b'\r')
+  elif endings == 'auto':
+    # windows
+    if b'\r\n' in original:
+      logging.info(f'Windows line endings detected: {filename}')
+      xml = xml.replace(b'\n', b'\r\n')
+    # ancient mac
+    if b'\r' in original and not b'\r\n' in original:
+      logging.info(f'Mac (classic) line endings detected: {filename}')
+      xml = xml.replace(b'\n', b'\r')
 
   # Log/return the result and write the file if the write flag is set.
   if xml == content:
@@ -162,6 +182,14 @@ def main(argv: Sequence[str] | None = None) -> int:
   parser = argparse.ArgumentParser(prog='lxml_format', description='Prettyprint XML file with lxml')
 
   parser.add_argument(
+    '-e', '--endings', '--line-endings',
+    dest='endings',
+    choices=['unix', 'windows', 'mac', 'auto'],
+    default='auto',
+    help='Line endings in the formatted file. Default: %(default)s)'
+  )
+
+  parser.add_argument(
     '-i', '--indent',
     dest='indent',
     type=int,
@@ -170,19 +198,19 @@ def main(argv: Sequence[str] | None = None) -> int:
   )
 
   parser.add_argument(
-    '-r', '--retries',
-    dest='retries',
-    type=int,
-    default=RETRIES,
-    help='Max number of retries to reach content stabilisation. Default: %(default)s)'
-  )
-
-  parser.add_argument(
     '-l', '--log-level', '--log',
     choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
     dest='loglevel',
     default='INFO',
     help='Debug level.'
+  )
+
+  parser.add_argument(
+    '-r', '--retries',
+    dest='retries',
+    type=int,
+    default=RETRIES,
+    help='Max number of retries to reach content stabilisation. Default: %(default)s)'
   )
 
   parser.add_argument(
@@ -205,8 +233,9 @@ def main(argv: Sequence[str] | None = None) -> int:
   # local environment settings.
   indent: int = int(os.environ.get(f'{ENV_PREFIX}INDENT', args.indent))
   retries: int = int(os.environ.get(f'{ENV_PREFIX}RETRIES', args.retries))
-  loglevel= os.environ.get(f'{ENV_PREFIX}LOGLEVEL', args.loglevel)
+  loglevel= os.environ.get(f'{ENV_PREFIX}LOG_LEVEL', args.loglevel)
   write: bool = str_to_bool(os.environ.get(f'{ENV_PREFIX}WRITE', str(args.write)))
+  endings= os.environ.get(f'{ENV_PREFIX}LINE_ENDINGS', args.endings).lower()
 
   # Setup logging
   numeric_level = getattr(logging, loglevel.upper(), None)
@@ -216,12 +245,17 @@ def main(argv: Sequence[str] | None = None) -> int:
                       format='[lxml_format] [%(asctime)s.%(msecs)03d] [%(levelname)s] %(message)s',
                       datefmt='%Y%m%d %H%M%S')
 
+  # Check line endings (not only CLI argument, but also environment variable)
+  if not endings in ['unix', 'windows', 'mac', 'auto']:
+    logging.error(f'Invalid line endings: {endings}')
+    return 1
+
   try:
     errors: int = 0
     # Reformat/check formatting of the files. Count the ones not properly
     # formatted.
     for filename in args.filenames:
-      if not beautify(filename, indent, retries, write):
+      if not beautify(filename, indent, retries, write, endings):
         errors += 1
     # Return the number of files not properly formatted + 2. This will be
     # reported to the OS as an error and enables better reporting, as long as
