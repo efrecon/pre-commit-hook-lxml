@@ -71,7 +71,8 @@ def beautify(
       indent: int = INDENT,
       retries: int = RETRIES,
       write: bool = False,
-      endings: str = 'auto') -> bool:
+      endings: str = 'auto',
+      self_closing: str = 'auto') -> bool:
   """
   Beautifies, e.g. gently reformat the XML content of a file. Changes can be
   written back to the file.
@@ -108,6 +109,17 @@ def beautify(
     if xml == content:
       break
     content = xml
+
+  # Fix self-closing tags if necessary, i.e. add an extra space before the '/>'
+  # characters (LXML removes that space, if there was one). This is an
+  # eye-candy, little more.
+  if self_closing == 'space':
+    logging.debug(f'Self-closing tags will have a space: {filename}')
+    xml = xml.replace(b'/>\n', b' />\n')
+  elif self_closing == 'auto':
+    if b' />' in original:
+      logging.info(f'Detected self-closing tags with space in {filename}')
+      xml = xml.replace(b'/>\n', b' />\n')
 
   # Convert line endings, if relevant. Detect from original content if
   # necessary. Note: the output of pretty_print is always using unix line
@@ -213,6 +225,14 @@ def main(argv: Sequence[str] | None = None) -> int:
   )
 
   parser.add_argument(
+    '-s', '--self-closing',
+    dest='self_closing',
+    choices=['space', 'nospace', 'auto'],
+    default='space',
+    help='Should self-closing tags have an ending space? Default: %(default)s)'
+  )
+
+  parser.add_argument(
     '-w', '--write',
     action='store_true',
     dest='write',
@@ -235,6 +255,7 @@ def main(argv: Sequence[str] | None = None) -> int:
   loglevel= os.environ.get(f'{ENV_PREFIX}LOG_LEVEL', args.loglevel)
   write: bool = str_to_bool(os.environ.get(f'{ENV_PREFIX}WRITE', str(args.write)))
   endings= os.environ.get(f'{ENV_PREFIX}LINE_ENDINGS', args.endings).lower()
+  self_closing= os.environ.get(f'{ENV_PREFIX}SELF_CLOSING', args.self_closing).lower()
 
   # Setup logging
   numeric_level = getattr(logging, loglevel.upper(), None)
@@ -244,9 +265,13 @@ def main(argv: Sequence[str] | None = None) -> int:
                       format='[lxml_format] [%(asctime)s.%(msecs)03d] [%(levelname)s] %(message)s',
                       datefmt='%Y%m%d %H%M%S')
 
-  # Check line endings (not only CLI argument, but also environment variable)
+  # Check line endings and self-closing mode (not only CLI arguments, but also
+  # environment variables)
   if not endings in ['unix', 'windows', 'mac', 'auto']:
     logging.error(f'Invalid line endings: {endings}')
+    return 1
+  if not self_closing in ['space', 'nospace', 'auto']:
+    logging.error(f'Invalid self-closing tag mode: {self_closing}')
     return 1
 
   try:
@@ -254,7 +279,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     # Reformat/check formatting of the files. Count the ones not properly
     # formatted.
     for filename in args.filenames:
-      if not beautify(filename, indent, retries, write, endings):
+      if not beautify(filename, indent, retries, write, endings, self_closing):
         errors += 1
     # Return the number of files not properly formatted + 2. This will be
     # reported to the OS as an error and enables better reporting, as long as

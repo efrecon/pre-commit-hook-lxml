@@ -5,7 +5,9 @@ files. Reformatting adds newlines and indentation spaces, and cleans up tags
 using the [tostring] function of the [lxml] project. By default, indentation
 details are picked from the [editorconfig] settings and mapped as best as
 possible to the capabilities of the [tostring] function, i.e. either a number of
-spaces, or indent using tabs.
+spaces, or indent using tabs. The default is also to unify the line-endings of
+the reformatted files (per file), and to add an extra space at the end of
+self-closing tags -- for extra readability.
 
   [pre-commit]: https://pre-commit.com/
   [hook]: ./.pre-commit-hooks.yaml
@@ -71,6 +73,13 @@ The CLI options can be used from the YAML pre-commit configuration, using the
     same line endings will be applied to the entire file in this order:
     `windows` > `mac` > `unix` -- as soon as the original file had one CRLF
     line ending, all lines will end with CRLF, etc.
++ `-s` or `--self-closing` controls if there should be an additional space just
+  before the `/>` characters in self-closing tags. Possible values are:
+  - `space`: a space is always added, for all self-closing tags. This is the
+    default.
+  - `nospace`: no extra space will be added, this the LXML default.
+  - `auto`: a space will be added if the file contained the ` />` sequence of
+    characters.
 + `-l` or `--log-level` is the log level. One of `DEBUG`, `INFO`, `WARNING`,
   `ERROR` or `CRITICAL`.
 + `-w` or `--write` tells the hook implementation to write the changes to the
@@ -88,9 +97,10 @@ depart from centralised options to adapt to local installation "quirks".
 + `PRE_COMMIT_HOOK_LXML_FORMAT_INDENT` is the same as `--indent`.
 + `PRE_COMMIT_HOOK_LXML_FORMAT_RETRIES` is the same as `--retries`.
 + `PRE_COMMIT_HOOK_LXML_FORMAT_WRITE` is the same as `--write`. It recognises
-  boolean values such as `on`, `True`, `FALSE` or `0`.
+  boolean values such as `on`, `True`, `FALSE`, `t` or `0`.
 + `PRE_COMMIT_HOOK_LXML_FORMAT_LOG_LEVEL` is the same as `--log-level`.
 + `PRE_COMMIT_HOOK_LXML_LINE_ENDINGS` is the same as `--line-endings`.
++ `PRE_COMMIT_HOOK_LXML_SELF_CLOSING` is the same as `--self-closing`.
 
 ## Example
 
