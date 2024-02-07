@@ -61,6 +61,16 @@ The CLI options can be used from the YAML pre-commit configuration, using the
   the file before it does not change. This is because lxml may need to run
   several times due to inconsistencies. The (good?) default is `5` and there are
   little reasons to deviate from it.
++ `-e` or `--endings` (or `--line-endings`) controls the line endings of the
+  reformatted files. It can take one of the following values.
+  - `unix` for LF line endings.
+  - `windows` for CRLF line endings.
+  - `mac` for CR line endings (Mac Classic).
+  - `auto` (the default) will detect the line endings of the original file and
+    apply it to the reformatted file. If the file had mixed line endings, the
+    same line endings will be applied to the entire file in this order:
+    `windows` > `mac` > `linux` -- as soon as the original file had one CRLF
+    line ending, all lines will end with CRLF, etc.
 + `-l` or `--log-level` is the log level. One of `DEBUG`, `INFO`, `WARNING`,
   `ERROR` or `CRITICAL`.
 + `-w` or `--write` tells the hook implementation to write the changes to the
@@ -80,6 +90,7 @@ depart from centralised options to adapt to local installation "quirks".
 + `PRE_COMMIT_HOOK_LXML_FORMAT_WRITE` is the same as `--write`. It recognises
   boolean values such as `on`, `True`, `FALSE` or `0`.
 + `PRE_COMMIT_HOOK_LXML_FORMAT_LOG_LEVEL` is the same as `--log-level`.
++ `PRE_COMMIT_HOOK_LXML_LINE_ENDINGS` is the same as `--line-endings`.
 
 ## Example
 
