@@ -69,7 +69,7 @@ The CLI options can be used from the YAML pre-commit configuration, using the
   - `auto` (the default) will detect the line endings of the original file and
     apply it to the reformatted file. If the file had mixed line endings, the
     same line endings will be applied to the entire file in this order:
-    `windows` > `mac` > `linux` -- as soon as the original file had one CRLF
+    `windows` > `mac` > `unix` -- as soon as the original file had one CRLF
     line ending, all lines will end with CRLF, etc.
 + `-l` or `--log-level` is the log level. One of `DEBUG`, `INFO`, `WARNING`,
   `ERROR` or `CRITICAL`.
