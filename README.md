@@ -15,6 +15,7 @@ files using the [tostring] function of the [lxml] project.
 + Preserve spacing in tags content
 + Keep comments
 + Remove blank lines
++ Enforce an XML declaration (by default) and control/detect its quoting style
 
   [pre-commit]: https://pre-commit.com/
   [hook]: ./.pre-commit-hooks.yaml
@@ -28,12 +29,12 @@ Add the following to your `.pre-commit-config.yaml` file. The default is to
 automatically reformat all files of [type] `xml`. You might want to check the
 latest version of the repository [here] and change the rev key.
 
-Note: The rev is NOT the version of [lxml] to run, but rather the version of the
-hook, i.e. a release of this project.
+Note: The `rev` is NOT the version of [lxml] to run, but rather the version of
+the hook, i.e. a release of this project.
 
 ```yaml
   - repo: https://github.com/efrecon/pre-commit-hook-lxml
-    rev: v0.1.1
+    rev: v0.1.3
     hooks:
       - id: format-xml
 ```
@@ -49,7 +50,7 @@ enforce 3 spaces of indentation for all XML file, independently of your
 
 ```yaml
   - repo: https://github.com/efrecon/pre-commit-hook-lxml
-    rev: v0.1.1
+    rev: v0.1.3
     hooks:
       - id: format-xml
         args:
@@ -58,11 +59,13 @@ enforce 3 spaces of indentation for all XML file, independently of your
 
 The pre-commit hook can be controlled using a number of environment
 [variables](#environment-variables), all starting with
-`PRE_COMMIT_HOOK_LXML_FORMAT_` and a number of [options](#cli-options). Use
-options to change the behaviour for all users of your repository, e.g.
-specifying the indentation. Options can be specified under the `args` key in the
-YAML configuration. Use environment variables to adapt to your local client-side
-requirements, e.g. turning up logging to understand possible problems.
+`PRE_COMMIT_HOOK_LXML_FORMAT_` and a number of [options](#cli-options):
+
+* Use options to change the behaviour for all users of your repository, e.g.
+  specifying the indentation. Options can be specified under the `args` key in
+  the YAML configuration.
+* Use environment variables to adapt to your local client-side requirements,
+  e.g. turning up logging to understand possible problems.
 
 ### CLI Options
 
@@ -94,6 +97,15 @@ The CLI options can be used from the YAML pre-commit configuration, using the
   - `nospace`: no extra space will be added, this the LXML default.
   - `auto`: a space will be added if the file contained the ` />` sequence of
     characters.
++ `-d` or `--declaration` controls if there should be a declaration, and its
+  quoting style. Possible values are:
+  - A negative boolean, e.g. `off`, `false`, `no`, etc. to turn off generating
+    an XML declaration at the top of the files.
+  - `double-quotes` to enforce the use of double quotes in the XML declaration.
+  - `single-quotes` to enforce the use of single quotes in the XML declaration.
+  - `auto` to detect quoting style from the rest of the XML content and apply it
+    to the XML declaration. This uses a crude heuristic and prefers double
+    quotes.
 + `-l` or `--log-level` is the log level. One of `DEBUG`, `INFO`, `WARNING`,
   `ERROR` or `CRITICAL`.
 + `-w` or `--write` tells the hook implementation to write the changes to the
@@ -115,6 +127,7 @@ depart from centralised options to adapt to local installation "quirks".
 + `PRE_COMMIT_HOOK_LXML_FORMAT_LOG_LEVEL` is the same as `--log-level`.
 + `PRE_COMMIT_HOOK_LXML_LINE_ENDINGS` is the same as `--line-endings`.
 + `PRE_COMMIT_HOOK_LXML_SELF_CLOSING` is the same as `--self-closing`.
++ `PRE_COMMIT_HOOK_LXML_DECLARATION` is the same as `--declaration`.
 
 ## Example
 
@@ -134,7 +147,7 @@ The following example
 would be reformatted to the following, provided an indentation of `2` spaces:
 
 ```xml
-<?xml version='1.0' encoding='UTF-8'?>
+<?xml version="1.0" encoding="UTF-8"?>
 <test>
   <inside>text</inside>
   <level>
@@ -159,6 +172,8 @@ Note that:
 + spacing in the `<space>` tag has been cleaned up, but its content preserved.
 + the `<empty>` tag has been replaced by a self-closing tag.
 + the `<empty />` self-closing tag has an extra space before the closing `/>`
++ the XML declaration uses double-quotes since attributes use double-quotes in
+  the reformatted output.
 
 ## Development
 
