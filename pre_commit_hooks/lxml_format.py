@@ -118,7 +118,7 @@ def beautify(
 
     # Detect if we should output an XML declaration in the first place.
     absence = re.compile(r'^\s*(false|off|no|0|f|n)\s*$', re.IGNORECASE)
-    xml_declaration = False if absence.match(declaration) else True
+    xml_declaration = not absence.match(declaration)
 
     # Pretty print the content until it has not changed between two iterations.
     content = original
@@ -192,7 +192,7 @@ def beautify(
         if b'\r\n' in original:
             logging.info(f'Windows line endings detected: {filename}')
             xml = xml.replace(b'\n', b'\r\n')
-        elif b'\r' in original and not b'\r\n' in original:
+        elif b'\r' in original and b'\r\n' not in original:
             logging.info(f'Mac (classic) line endings detected: {filename}')
             xml = xml.replace(b'\n', b'\r')
 
@@ -339,13 +339,13 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     # Check line endings and self-closing mode (not only CLI arguments, but
     # also environment variables)
-    if not endings in ['unix', 'windows', 'mac', 'auto']:
+    if endings not in ['unix', 'windows', 'mac', 'auto']:
         logging.error(f'Invalid line endings: {endings}')
         return 1
-    if not self_closing in ['space', 'nospace', 'auto']:
+    if self_closing not in ['space', 'nospace', 'auto']:
         logging.error(f'Invalid self-closing tag mode: {self_closing}')
         return 1
-    if not declaration in ['auto', 'no', 'off', 'false', '0', 'f', 'n',
+    if declaration not in ['auto', 'no', 'off', 'false', '0', 'f', 'n',
                            'single-quotes', 'double-quotes']:
         logging.error(f'Invalid XML declaration mode: {declaration}')
         return 1
