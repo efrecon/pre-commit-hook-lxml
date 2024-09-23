@@ -118,10 +118,7 @@ def beautify(
 
     # Detect if we should output an XML declaration in the first place.
     absence = re.compile(r'^\s*(false|off|no|0|f|n)\s*$', re.IGNORECASE)
-    if absence.match(declaration):
-        xml_declaration = False
-    else:
-        xml_declaration = True
+    xml_declaration = False if absence.match(declaration) else True
 
     # Pretty print the content until it has not changed between two iterations.
     content = original
@@ -155,11 +152,11 @@ def beautify(
             # Detect quoting style in the rest of the XML file. This
             # is crude and prefers double-quoting.
             if declaration == 'auto':
-                if parts[2].find(b'="'):
+                if parts[2].find(b'="') != -1:
                     declaration = 'double-quotes'
                     logging.debug(
                         f'Detected use of double quotes in {filename}')
-                elif parts[2].find(b"='"):
+                elif parts[2].find(b"='") != -1:
                     declaration = 'single-quotes'
                     logging.debug(
                         f'Detected use of single quotes in {filename}')
@@ -350,7 +347,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 1
     if not declaration in ['auto', 'no', 'off', 'false', '0', 'f', 'n',
                            'single-quotes', 'double-quotes']:
-        logging.error(f'Invalid self-closing tag mode: {self_closing}')
+        logging.error(f'Invalid XML declaration mode: {declaration}')
         return 1
 
     try:
