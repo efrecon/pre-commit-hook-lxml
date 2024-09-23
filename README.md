@@ -61,10 +61,10 @@ The pre-commit hook can be controlled using a number of environment
 [variables](#environment-variables), all starting with
 `PRE_COMMIT_HOOK_LXML_FORMAT_` and a number of [options](#cli-options):
 
-* Use options to change the behaviour for all users of your repository, e.g.
++ Use options to change the behaviour for all users of your repository, e.g.
   specifying the indentation. Options can be specified under the `args` key in
   the YAML configuration.
-* Use environment variables to adapt to your local client-side requirements,
++ Use environment variables to adapt to your local client-side requirements,
   e.g. turning up logging to understand possible problems.
 
 ### CLI Options
