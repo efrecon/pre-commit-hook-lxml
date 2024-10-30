@@ -34,7 +34,7 @@ the hook, i.e. a release of this project.
 
 ```yaml
   - repo: https://github.com/efrecon/pre-commit-hook-lxml
-    rev: v0.1.3
+    rev: v0.1.4
     hooks:
       - id: format-xml
 ```
@@ -50,7 +50,7 @@ enforce 3 spaces of indentation for all XML file, independently of your
 
 ```yaml
   - repo: https://github.com/efrecon/pre-commit-hook-lxml
-    rev: v0.1.3
+    rev: v0.1.4
     hooks:
       - id: format-xml
         args:
